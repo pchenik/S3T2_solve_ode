@@ -32,7 +32,7 @@ def test_adaptive(f, y0):
     methods = (
         (ExplicitEulerMethod(), AdaptType.EULER),
         (RungeKuttaMethod(coeffs=collection.rk4_coeffs),            AdaptType.RUNGE),
-        #(EmbeddedRungeKuttaMethod(coeffs=collection.dopri_coeffs),  AdaptType.EMBEDDED),
+        (EmbeddedRungeKuttaMethod(coeffs=collection.dopri_coeffs),  AdaptType.EMBEDDED),
     )
 
     for method, adapt_type in methods:

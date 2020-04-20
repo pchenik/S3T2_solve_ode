@@ -17,6 +17,8 @@ def fix_step_integration(method: OneStepMethod, func, y_start, ts):
     return: list of t's, list of y's
     """
     ys = [y_start]
+    # if len(ys) == 1:
+    #     print(y_start, ts)
 
     for i, t in enumerate(ts[:-1]):
         y = ys[-1]
@@ -28,8 +30,8 @@ def fix_step_integration(method: OneStepMethod, func, y_start, ts):
 
 
 def runge_error(y1, y2, p):
-    r1 = np.linalg.norm(y1 - y2) / (1 - 2 ** (-p))
-    r2 = np.linalg.norm(y1 - y2) / (2 ** p - 1)
+    r1 = np.linalg.norm(y2 - y1) / (1 - 2 ** (-p))
+    r2 = np.linalg.norm(y2 - y1) / (2 ** p - 1)
     return max(r1, r2)
 
 def adaptive_step_integration(method: OneStepMethod, func, y_start, t_span,
@@ -54,20 +56,22 @@ def adaptive_step_integration(method: OneStepMethod, func, y_start, t_span,
     h = 0.1
     p = adapt_type.value
 
-    while ts[-1] + eps < t_end:
-        ts1, y1 = fix_step_integration(method, func, y_start, np.linspace(ts[-1], ts[-1] + h, 2))
-        ts2, y2 = fix_step_integration(method, func, y_start, np.linspace(ts[-1], ts[-1] + h, 3))
-        err = 0
-
+    while ts[-1] + h < t_end:
         if adapt_type != AdaptType.EMBEDDED:
+            ts1, y1 = fix_step_integration(method, func, ys[-1], np.linspace(ts[-1], ts[-1] + h, 2))
+            ts2, y2 = fix_step_integration(method, func, ys[-1], np.linspace(ts[-1], ts[-1] + h, 3))
             err = runge_error(y1[-1], y2[-1], p)
+            yy = y2[-1]
+        else:
+            y2, err = method.embedded_step(func, ts[-1], ys[-1], h)
+            yy = y2
 
-        if err > atol:
+        if err > atol or err > np.linalg.norm(yy) * rtol:
             h = h * 0.9 * (atol / err) ** (1 / (p + 1))
             continue
         else:
             ts = np.insert(ts, len(ts), ts[-1] + h, axis=0)
-            ys = np.insert(ts, len(ts), y2[-1], axis=0)
+            ys = np.insert(ys, len(ys), yy, axis=0)
             h = h * (atol / err) ** (1 / (p + 1))
 
     return ts, ys

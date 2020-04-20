@@ -19,6 +19,12 @@ class OneStepMethod:
         """
         raise NotImplementedError
 
+    def embedded_step(self, func: ODE, t, y, dt):
+        """
+        it hasn't been placed here at first
+        """
+        raise NotImplementedError
+
 
 class ExplicitEulerMethod(OneStepMethod):
     """
@@ -83,9 +89,10 @@ class EmbeddedRungeKuttaMethod(RungeKuttaMethod):
     def embedded_step(self, func: ODE, t, y, dt):
         A, b, e = self.A, self.b, self.e
         c = np.sum(A, axis=0)
-        y1 = RK45(func, A, b)
-        y2 = RK45(func, A, b + e)
-        return y1, y2-y1
+        y1 = super().step(func, t, y, dt)
+        b += e
+        y2 = super().step(func, t, y, dt)
+        return y1, np.linalg.norm(y2 - y1)
 
         raise NotImplementedError
 
