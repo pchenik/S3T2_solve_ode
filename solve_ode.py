@@ -5,9 +5,8 @@ from one_step_methods import OneStepMethod
 
 
 class AdaptType(enum.Enum):
-    EULER = 1
-    RUNGE = 4
-    EMBEDDED = 5
+    RUNGE = 0
+    EMBEDDED = 1
 
 
 def fix_step_integration(method: OneStepMethod, func, y_start, ts):
@@ -54,7 +53,8 @@ def adaptive_step_integration(method: OneStepMethod, func, y_start, t_span,
 
     eps = 1e-9
     h = 0.1
-    p = adapt_type.value
+    p = method.p
+    err = 0
 
     while ts[-1] + h < t_end:
         if adapt_type != AdaptType.EMBEDDED:
@@ -66,7 +66,9 @@ def adaptive_step_integration(method: OneStepMethod, func, y_start, t_span,
             y2, err = method.embedded_step(func, ts[-1], ys[-1], h)
             yy = y2
 
-        if err > atol or err > np.linalg.norm(yy) * rtol:
+        tol = np.linalg.norm(yy) * rtol + atol
+
+        if err > tol: #err > atol:
             h = h * 0.9 * (atol / err) ** (1 / (p + 1))
             continue
         else:

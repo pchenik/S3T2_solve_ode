@@ -47,6 +47,10 @@ class ImplicitEulerMethod(OneStepMethod):
         super().__init__(name='Euler (implicit)', p=1)
 
     def step(self, func: ODE, t, y, dt):
+        f = lambda y_: y_ - y - dt * func(t + dt, y_)
+        y_next = fsolve(func, y)
+        return y + dt * func(t + dt, y_next)
+
         raise NotImplementedError
 
 
@@ -60,21 +64,32 @@ class RungeKuttaMethod(OneStepMethod):
 
     def step(self, func: ODE, t, y, dt):
         A, b = self.A, self.b
-        # rk = RK45(func, t, y, t + dt)
+        # rk = RK45(func, t, y, t + dt, first_step=dt)
         # rk.h_abs = dt
         # rk.step()
         # return rk.y
-        y1 = y
-        s = len(b)
-        phi = 0
-        K = [0 for i in range(s)]
-        for i in range(s):
-            left_arg, right_arg = t + dt * sum([A[i][j] for j in range(i)]), y + dt * sum([A[i][j] * K[j] for j in range(i)])
-            K[i] = func(left_arg, right_arg)
-            phi += b[i] * K[i]
 
+        # y1 = y
+        # s = len(b)
+        # phi = 0
+        # K = [0 for i in range(s)]
+        # for i in range(s):
+        #     left_arg, right_arg = t + dt * sum([A[i][j] for j in range(i)]), y + dt * sum([A[i][j] * K[j] for j in range(i)])
+        #     K[i] = func(left_arg, right_arg)
+        #     phi += b[i] * K[i]
+        # return y + dt * phi
 
-        return y + dt * phi
+        c = np.array([np.sum(A[i][0:i]) for i in range(len(A))])
+        K = np.zeros((len(c), len(y)))
+        K[0] = func(t, y)
+        for s, (a, c) in enumerate(zip(A[1:], c[1:]), start=1):
+            dy = np.dot(K[:s].T, a[:s]) * dt
+            K[s] = func(t + c * dt, y + dy)
+
+        y_new = y + dt * np.dot(K.T, b)
+
+        return y_new
+
 
 class EmbeddedRungeKuttaMethod(RungeKuttaMethod):
     """
@@ -88,10 +103,10 @@ class EmbeddedRungeKuttaMethod(RungeKuttaMethod):
 
     def embedded_step(self, func: ODE, t, y, dt):
         A, b, e = self.A, self.b, self.e
-        c = np.sum(A, axis=0)
         y1 = super().step(func, t, y, dt)
-        b += e
+        self.b += e
         y2 = super().step(func, t, y, dt)
+        self.b -= e
         return y1, np.linalg.norm(y2 - y1)
 
         raise NotImplementedError
