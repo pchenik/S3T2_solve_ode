@@ -30,7 +30,7 @@ def test_adaptive(f, y0):
     yss = []
 
     methods = (
-        (ExplicitEulerMethod(), AdaptType.EULER),
+        (ExplicitEulerMethod(), AdaptType.RUNGE),
         (RungeKuttaMethod(coeffs=collection.rk4_coeffs),            AdaptType.RUNGE),
         (EmbeddedRungeKuttaMethod(coeffs=collection.dopri_coeffs),  AdaptType.EMBEDDED),
     )
@@ -78,7 +78,7 @@ def test_adaptive_order():
     f = Harmonic(y0, 1, 1)
 
     methods = (
-        (ExplicitEulerMethod(),                                     AdaptType.EULER),
+        (ExplicitEulerMethod(),                                     AdaptType.RUNGE),
         (RungeKuttaMethod(coeffs=collection.rk4_coeffs),            AdaptType.RUNGE),
         (EmbeddedRungeKuttaMethod(coeffs=collection.dopri_coeffs),  AdaptType.EMBEDDED),
     )
@@ -130,7 +130,7 @@ def test_arenstorf():
     yss = []
 
     methods = (
-        # (ExplicitEulerMethod(),                                     AdaptType.EULER),
+        # (ExplicitEulerMethod(),                                     AdaptType.RUNGE),
         (RungeKuttaMethod(coeffs=collection.rk4_coeffs),            AdaptType.RUNGE),
         (EmbeddedRungeKuttaMethod(coeffs=collection.dopri_coeffs),  AdaptType.EMBEDDED),
     )
