@@ -16,8 +16,6 @@ def fix_step_integration(method: OneStepMethod, func, y_start, ts):
     return: list of t's, list of y's
     """
     ys = [y_start]
-    # if len(ys) == 1:
-    #     print(y_start, ts)
 
     for i, t in enumerate(ts[:-1]):
         y = ys[-1]
@@ -51,12 +49,15 @@ def adaptive_step_integration(method: OneStepMethod, func, y_start, t_span,
     ys = np.array([y], dtype='float64')
     ts = np.array([t], dtype='float64')
 
-    eps = 1e-9
+    eps = 1e-15
     h = 0.1
     p = method.p
     err = 0
 
-    while ts[-1] + h < t_end:
+    while abs(ts[-1] - t_end) > eps:
+        if ts[-1] + h > t_end:
+            h = t_end - ts[-1]
+
         if adapt_type != AdaptType.EMBEDDED:
             ts1, y1 = fix_step_integration(method, func, ys[-1], np.linspace(ts[-1], ts[-1] + h, 2))
             ts2, y2 = fix_step_integration(method, func, ys[-1], np.linspace(ts[-1], ts[-1] + h, 3))
@@ -66,9 +67,9 @@ def adaptive_step_integration(method: OneStepMethod, func, y_start, t_span,
             y2, err = method.embedded_step(func, ts[-1], ys[-1], h)
             yy = y2
 
-        tol = np.linalg.norm(yy) * rtol + atol
+        #tol = np.linalg.norm(yy) * rtol + atol
 
-        if err > tol: #err > atol:
+        if err > atol: #err > atol:
             h = h * 0.9 * (atol / err) ** (1 / (p + 1))
             continue
         else:

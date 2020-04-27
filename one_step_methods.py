@@ -47,8 +47,8 @@ class ImplicitEulerMethod(OneStepMethod):
         super().__init__(name='Euler (implicit)', p=1)
 
     def step(self, func: ODE, t, y, dt):
-        f = lambda y_: y_ - y - dt * func(t + dt, y_)
-        y_next = fsolve(func, y)
+        f = lambda y_new: y_new - y - dt * func(t + dt, y_new)
+        y_next = fsolve(f, y)
         return y + dt * func(t + dt, y_next)
 
         raise NotImplementedError
@@ -73,8 +73,9 @@ class RungeKuttaMethod(OneStepMethod):
         # s = len(b)
         # phi = 0
         # K = [0 for i in range(s)]
+        # c = np.array([np.sum(A[i][0:i]) for i in range(len(A))])
         # for i in range(s):
-        #     left_arg, right_arg = t + dt * sum([A[i][j] for j in range(i)]), y + dt * sum([A[i][j] * K[j] for j in range(i)])
+        #     left_arg, right_arg = t + dt * c[i], y + dt * sum([A[i][j] * K[j] for j in range(i)])
         #     K[i] = func(left_arg, right_arg)
         #     phi += b[i] * K[i]
         # return y + dt * phi
@@ -121,8 +122,24 @@ class EmbeddedRosenbrockMethod(OneStepMethod):
     def __init__(self, coeffs: collection.EmbeddedRosenbrockScheme):
         super().__init__(**coeffs.__dict__)
 
+    def Rosenbrock(self, func: ODE, t, y, dt):
+        A, G, g, b, e = self.A, self.G, self.gamma, self.b, self.e
+        s = len(b)
+        k = np.zeros(s)
+        for i in range(s):
+            left_ = dt * func(t, y + np.sum([A[i][j] * k[j] for j in range(i)]))
+            right_ = dt * func.jacobian(t, y) * np.sum([G[i][j] * k[j] for j in range(i)])
+            k[i] = (left_ + right_) / (1 - dt * func.jacobian(t, y) * g)
+
+        y_new = y + np.sum([b[j] * k[j] for j in range(s)])
+        return y_new
+
     def embedded_step(self, func: ODE, t, y, dt):
         A, G, g, b, e = self.A, self.G, self.gamma, self.b, self.e
-        c = np.sum(A, axis=0)
-        raise NotImplementedError
+        y1 = self.Rosenbrock(func, t, y, dt)
+        self.b += e
+        y2 = self.Rosenbrock(func, t, y, dt)
+        self.b -= e
+        dy = np.linalg.norm(y2 - y1)
         return y1, dy
+        raise NotImplementedError
