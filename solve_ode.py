@@ -49,7 +49,7 @@ def adaptive_step_integration(method: OneStepMethod, func, y_start, t_span,
     ys = np.array([y], dtype='float64')
     ts = np.array([t], dtype='float64')
 
-    eps = 1e-15
+    eps = 1e-9
     h = 0.1
     p = method.p
     err = 0

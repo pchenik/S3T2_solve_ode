@@ -88,7 +88,7 @@ rosenbrock23_coeffs = EmbeddedRosenbrockScheme(
         [3-v2, 2*v2-5, 0],
     ],
     gamma=d,
-    b=[0,   1, 0],
+    b=[0.0,   1.0, 0.0],
     e=[1/6, -1/3, 1/6],
     p=2,
     q=3,

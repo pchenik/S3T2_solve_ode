@@ -125,11 +125,15 @@ class EmbeddedRosenbrockMethod(OneStepMethod):
     def Rosenbrock(self, func: ODE, t, y, dt):
         A, G, g, b, e = self.A, self.G, self.gamma, self.b, self.e
         s = len(b)
-        k = np.zeros(s)
+        k = np.zeros((s, len(y)))
         for i in range(s):
-            left_ = dt * func(t, y + np.sum([A[i][j] * k[j] for j in range(i)]))
-            right_ = dt * func.jacobian(t, y) * np.sum([G[i][j] * k[j] for j in range(i)])
-            k[i] = (left_ + right_) / (1 - dt * func.jacobian(t, y) * g)
+            left_ = dt * func(t, y + np.sum([A[i][j] * k[j] for j in range(i)], axis=0))
+            right_mult = np.zeros(len(y))
+            if i > 0:
+                right_mult = np.sum([G[i][j] * k[j] for j in range(i)], axis=0)
+            right_ = dt * func.jacobian(t, y).dot(right_mult)
+            INV = np.linalg.inv(np.eye(len(y)) - dt * func.jacobian(t, y) * g)
+            k[i] = INV.dot(left_ + right_)
 
         y_new = y + np.sum([b[j] * k[j] for j in range(s)])
         return y_new
